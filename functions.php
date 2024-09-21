@@ -5,6 +5,9 @@ add_action('wp_ajax_get_live_score', 'egedal_softball_get_live_score');
 add_action('wp_ajax_nopriv_get_live_score', 'egedal_softball_get_live_score');
 
 function egedal_softball_get_live_score() {
+    // Sikkerhedscheck
+    check_ajax_referer('egedal_softball_nonce', 'security');
+
     // Hent den seneste kamp (antager at vi kun viser én kamp ad gangen)
     $args = array(
         'post_type' => 'kampe',
@@ -19,14 +22,14 @@ function egedal_softball_get_live_score() {
         $response = array(
             'success' => true,
             'data' => array(
-                'hjemmehold_score' => get_field('score_hjemmehold', $post_id),
-                'udehold_score' => get_field('score_udehold', $post_id),
-                'inning' => get_field('aktuel_inning', $post_id),
-                'status' => get_field('kamp_status', $post_id)
+                'hjemmehold_score' => intval(get_field('score_hjemmehold', $post_id)),
+                'udehold_score' => intval(get_field('score_udehold', $post_id)),
+                'inning' => sanitize_text_field(get_field('aktuel_inning', $post_id)),
+                'status' => sanitize_text_field(get_field('kamp_status', $post_id))
             )
         );
     } else {
-        $response = array('success' => false);
+        $response = array('success' => false, 'message' => 'Ingen aktive kampe fundet.');
     }
 
     wp_send_json($response);
@@ -35,6 +38,9 @@ function egedal_softball_get_live_score() {
 // Indlæs AJAX-script
 function egedal_softball_enqueue_scripts() {
     wp_enqueue_script('egedal-softball-ajax', get_template_directory_uri() . '/js/egedal-softball-ajax.js', array('jquery'), '1.0', true);
-    wp_localize_script('egedal-softball-ajax', 'egedal_softball_ajax', array('ajax_url' => admin_url('admin-ajax.php')));
+    wp_localize_script('egedal-softball-ajax', 'egedal_softball_ajax', array(
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('egedal_softball_nonce')
+    ));
 }
 add_action('wp_enqueue_scripts', 'egedal_softball_enqueue_scripts');
