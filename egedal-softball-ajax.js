@@ -5,25 +5,26 @@ jQuery(document).ready(function($) {
             url: egedal_softball_ajax.ajax_url,
             type: 'POST',
             data: {
-                action: 'get_live_score'
+                action: 'get_live_score',
+                security: egedal_softball_ajax.nonce
             },
             success: function(response) {
                 if (response.success) {
-                    // Opdater DOM-elementer med de nye scoredata
                     $('#hjemmehold-score').text(response.data.hjemmehold_score);
                     $('#udehold-score').text(response.data.udehold_score);
                     $('#aktuel-inning').text(response.data.inning);
                     $('#kamp-status').text(formatStatus(response.data.status));
                 } else {
-                    console.error('Fejl ved hentning af live score');
+                    console.error('Fejl ved hentning af live score:', response.message);
+                    $('#live-score-error').text('Kunne ikke hente live score. Prøv igen senere.').show();
                 }
             },
             error: function(xhr, status, error) {
                 console.error('AJAX-fejl:', error);
+                $('#live-score-error').text('Der opstod en fejl. Prøv igen senere.').show();
             },
             complete: function() {
                 $('#loading-indicator').hide();
-                // Kald funktionen igen efter 30 sekunder
                 setTimeout(updateLiveScore, 30000);
             }
         });
@@ -42,6 +43,5 @@ jQuery(document).ready(function($) {
         }
     }
 
-    // Start den første opdatering
     updateLiveScore();
 });
